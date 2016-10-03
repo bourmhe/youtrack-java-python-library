@@ -1,1 +1,1 @@
-# youtrack-java-python-library
+# youtrack-rest-java-library
