@@ -6,6 +6,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import sun.nio.cs.ext.IBM037;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +30,7 @@ public class YouTrack
         mBaseURL = String.format("%s/rest", mURL);
     }
 
-    private final HttpEntity<String> request(String pUrl, HttpMethod pMethod, Map<String, String> pURLVariables, @Nullable MediaType pContentType)
+    private final HttpEntity<String> request(String pUrl, HttpMethod pMethod, LinkedMultiValueMap<String, Object> pData, MediaType pContentType)
     {
         if(pContentType == null)
         {
@@ -37,7 +39,7 @@ public class YouTrack
         mHeader.setContentType(pContentType);
 
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.exchange(mBaseURL+pUrl, pMethod, new HttpEntity<Object>(mHeader), String.class, pURLVariables);
+        return restTemplate.exchange(pUrl, pMethod, new HttpEntity<Object>(pData, mHeader), String.class);
     }
 
     public boolean login() throws HttpClientErrorException
@@ -59,13 +61,22 @@ public class YouTrack
         }
     }
 
-    public void createIssue(String pProject, String pSummary, String pDescription)
+    public HttpEntity<String> createIssue(LinkedMultiValueMap<String, Object> pData)
     {
-        Map<String, String> param = new HashMap<String, String>();
-        param.put("PROJECT", pProject);
-        param.put("SUMMARY", pSummary);
-        param.put("DESCRIPTION", pDescription);
-        request("/issue?project={PROJECT}&summary={SUMMARY}&description={DESCRIPTION}", HttpMethod.PUT, param, MediaType.APPLICATION_FORM_URLENCODED);
+        return request(mBaseURL+"/issue", HttpMethod.PUT, pData, MediaType.APPLICATION_FORM_URLENCODED);
     }
 
+    public HttpEntity<String> execute(String pLocation, LinkedMultiValueMap<String, Object> pData)
+    {
+        return request(pLocation+"/execute", HttpMethod.POST, pData, MediaType.APPLICATION_FORM_URLENCODED);
+    }
+
+    public static void main(String[] args) {
+        YouTrack youTrack = new YouTrack("http://10.0.1.9:8080/", "HPv3_users", "ibapass");
+        youTrack.login();
+        Issue issue = new Issue(youTrack, "HP3", "C'est un test avec un classe", "Trop bien ca marche");
+        issue.setType("bug");
+        issue.setCustomField("uuid", "1234567891234567");
+        issue.setCustomField("site", "pat115");
+    }
 }
